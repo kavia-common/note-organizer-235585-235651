@@ -85,15 +85,21 @@ def get_settings() -> Settings:
             )
         database_url = from_txt
 
-    cors_raw = os.getenv("CORS_ORIGINS", "").strip()
+    # CORS configuration: support both container conventions.
+    # - Preferred: CORS_ORIGINS (comma-separated)
+    # - Fallback: ALLOWED_ORIGINS (comma-separated) (present in the provided notes_backend/.env)
+    cors_raw = (os.getenv("CORS_ORIGINS", "") or os.getenv("ALLOWED_ORIGINS", "")).strip()
     if cors_raw:
         cors_origins = [o.strip() for o in cors_raw.split(",") if o.strip()]
     else:
-        # Sensible dev defaults. Next.js frontend is typically on :3000.
+        # Sensible defaults for local dev + hosted preview.
+        frontend_url = os.getenv("FRONTEND_URL", "").strip()
         cors_origins = [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
         ]
+        if frontend_url:
+            cors_origins.append(frontend_url)
 
     return Settings(
         app_name=os.getenv("APP_NAME", "Notes API"),
